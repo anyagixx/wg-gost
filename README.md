@@ -22,6 +22,7 @@
 - ✅ Российские сайты (банки, госуслуги) — напрямую (минимальный пинг)
 - ✅ Автоматическое обновление списков IP
 - ✅ Автозапуск после перезагрузки серверов
+- ✅ **Совместимость с OpenVPN** — можно использовать одновременно!
 
 ---
 
@@ -30,25 +31,12 @@
 - Два VPS сервера с Ubuntu Server 20.04/22.04:
   - **Hetzner** (Германия) — выходная нода
   - **Timeweb** (Россия) — входная нода + WireGuard
-- Доменное имя (опционально, для SSL)
 
 ---
 
 ## 📦 Быстрая установка
 
-### Шаг 1: Генерация хэша пароля для WireGuard
-
-На любом сервере с Docker выполните:
-
-```bash
-docker run --rm -it ghcr.io/wg-easy/wg-easy wgpw 'ВАШ_ПАРОЛЬ_АДМИНКИ'
-```
-
-Скопируйте полученный хэш (начинается с `$2b$12$...`). **Важно:** экранируйте символы `$` обратным слешем при использовании в команде.
-
----
-
-### Шаг 2: Установка на Hetzner (Германия)
+### Шаг 1: Установка на Hetzner (Германия)
 
 Зайдите на сервер Hetzner по SSH и выполните одну команду:
 
@@ -64,7 +52,7 @@ curl -sSL https://raw.githubusercontent.com/anyagixx/wg-gost/main/hetzner/setup.
 
 ---
 
-### Шаг 3: Установка на Timeweb (Россия)
+### Шаг 2: Установка на Timeweb (Россия)
 
 Зайдите на сервер Timeweb по SSH и выполните:
 
@@ -73,7 +61,7 @@ curl -sSL https://raw.githubusercontent.com/anyagixx/wg-gost/main/timeweb/setup.
   "HETZNER_IP" \
   "GOST_ПАРОЛЬ" \
   "TIMEWEB_IP" \
-  "ХЭШ_WG_EASY"
+  "WG_PASSWORD"
 ```
 
 **Параметры:**
@@ -82,15 +70,15 @@ curl -sSL https://raw.githubusercontent.com/anyagixx/wg-gost/main/timeweb/setup.
 | `HETZNER_IP` | IP-адрес сервера в Германии | `49.12.123.45` |
 | `GOST_ПАРОЛЬ` | Тот же пароль, что на Hetzner | `MySecretPass123` |
 | `TIMEWEB_IP` | Внешний IP сервера Timeweb | `5.42.125.102` |
-| `ХЭШ_WG_EASY` | Хэш пароля от шага 1 | `$2b$12\$abc...` |
+| `WG_PASSWORD` | Пароль для админки WireGuard | `AdminPass456` |
 
-**Пример с экранированием:**
+**Пример:**
 ```bash
 curl -sSL https://raw.githubusercontent.com/anyagixx/wg-gost/main/timeweb/setup.sh | bash -s -- \
   "49.12.123.45" \
   "MySecretPass123" \
   "5.42.125.102" \
-  "\$2b\$12\$LhKmYhVqQxXvX9YwKqMxOeWvZ5FqYzAqGtHkLmNpQrS"
+  "AdminPass456"
 ```
 
 **Что установится:**
@@ -101,6 +89,8 @@ curl -sSL https://raw.githubusercontent.com/anyagixx/wg-gost/main/timeweb/setup.
 - Systemd служба для автозапуска
 - Cron для ежедневного обновления базы RIPE
 
+**Важно:** Хэш пароля для админки генерируется автоматически внутри скрипта после установки Docker!
+
 ---
 
 ## 📱 Подключение клиентов
@@ -109,7 +99,7 @@ curl -sSL https://raw.githubusercontent.com/anyagixx/wg-gost/main/timeweb/setup.
 
 Откройте в браузере: `http://ВАШ_TIMEWEB_IP:51821`
 
-Введите пароль (тот, для которого генерировали хэш).
+Введите пароль (тот, который указали как `WG_PASSWORD`).
 
 ### Создание клиента
 
@@ -156,6 +146,14 @@ WireGuard конфигурация маршрутизирует только IPv
 **Windows:**
 1. Панель управления → Сеть → Свойства адаптера WireGuard
 2. Отключите протокол IPv6
+
+### Совместимость с OpenVPN
+
+WireGuard использует подсеть `172.16.0.0/24` вместо стандартной `10.8.0.0/24`, чтобы **избежать конфликта** с OpenVPN (который обычно использует `10.0.0.0/8`).
+
+Вы можете одновременно:
+- Быть подключены к OpenVPN для доступа к рабочим ресурсам
+- Быть подключены к WireGuard для обхода блокировок
 
 ### Проверка работоспособности
 
@@ -243,6 +241,10 @@ wg-gost/
 
 1. Проверьте порт: `docker ps | grep wg-easy`
 2. Проверьте firewall: `ufw status`
+
+### Конфликт с OpenVPN
+
+WireGuard использует подсеть `172.16.0.0/24`, которая не пересекается с `10.0.0.0/8`. Если у вас всё равно есть конфликт — проверьте настройки OpenVPN.
 
 ---
 
