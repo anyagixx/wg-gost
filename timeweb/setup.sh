@@ -117,6 +117,7 @@ docker rm -f wg-easy 2>/dev/null || true
 mkdir -p ~/.wg-easy
 
 # Формируем команду запуска с НОВОЙ подсетью 172.16.0.0/24 (без конфликта с OpenVPN 10.0.0.0/8)
+# MTU 1280 автоматически прописывается в конфиги клиентов
 if [ -n "$WG_PASS_HASH" ]; then
     docker run -d \
         --name wg-easy \
@@ -125,6 +126,7 @@ if [ -n "$WG_PASS_HASH" ]; then
         -e PASSWORD_HASH="${WG_PASS_HASH}" \
         -e WG_DEFAULT_ADDRESS=172.16.0.x \
         -e WG_DEFAULT_DNS=1.1.1.1 \
+        -e WG_MTU=1280 \
         -v ~/.wg-easy:/etc/wireguard \
         -p 51820:51820/udp \
         -p 51821:51821/tcp \
@@ -138,6 +140,7 @@ else
         -e WG_HOST=${TIMEWEB_IP} \
         -e WG_DEFAULT_ADDRESS=172.16.0.x \
         -e WG_DEFAULT_DNS=1.1.1.1 \
+        -e WG_MTU=1280 \
         -v ~/.wg-easy:/etc/wireguard \
         -p 51820:51820/udp \
         -p 51821:51821/tcp \
