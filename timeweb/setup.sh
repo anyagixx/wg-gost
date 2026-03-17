@@ -55,7 +55,7 @@ echo ""
 echo "📦 Обновляем систему и устанавливаем зависимости..."
 apt update -qq
 apt upgrade -y -qq
-apt install -y -qq ipset jq curl iptables
+apt install -y -qq ipset jq curl iptables apache2-utils
 
 # 2. Установка Docker (ДО генерации хэша!)
 echo "🐳 Устанавливаем Docker..."
@@ -67,10 +67,10 @@ else
     echo "   Docker уже установлен, пропускаем..."
 fi
 
-# 3. Генерация хэша пароля WireGuard (теперь Docker уже установлен!)
+# 3. Генерация хэша пароля WireGuard через htpasswd (apache2-utils)
 if [ -n "$WG_PASSWORD" ]; then
     echo "🔐 Генерируем хэш пароля WireGuard..."
-    WG_PASS_HASH=$(docker run --rm ghcr.io/wg-easy/wg-easy wgpw "$WG_PASSWORD" 2>/dev/null | tr -d '\n')
+    WG_PASS_HASH=$(htpasswd -nbB admin "$WG_PASSWORD" | cut -d: -f2)
     echo "   ✓ Хэш сгенерирован"
 else
     WG_PASS_HASH=""
